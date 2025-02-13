@@ -1,3 +1,3 @@
 Roadmap:
-- Coordinate data for the other lines and stations.
+- Add lines 2-12.
 - CapsuleTraveler follows (approximately) real-life schedule.
