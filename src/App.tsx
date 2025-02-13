@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -299,7 +299,7 @@ const Scene: React.FC = () => {
       return { graph, schedules };
     }, []);
   const { camera } = useThree();
-  useFrame(() => {
+  useEffect(() => {
     camera.lookAt(graph.vertices[0].position);
   });
   return (
