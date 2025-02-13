@@ -4,7 +4,7 @@ import { Text, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { lines } from "./metro_lines.json";
 import { coordinates } from "./madrid_station_coordinates.json";
-import { layoutGraph3D, normalizeCoordinates } from "./utilities";
+import { normalizeCoordinates } from "./utilities";
 
 type LineNumber = keyof typeof lines;
 
@@ -114,10 +114,10 @@ export class MetroNetwork {
   }
   public get Graph(): Graph {
     if (!this.graph) {
-      this.graph = layoutGraph3D({
+      this.graph = {
         vertices: this.vertices,
         edges: this.edges,
-      });
+      };
     }
     return this.graph;
   }
@@ -293,7 +293,7 @@ const Graph3D: React.FC<{
 const Scene: React.FC = () => {
   const { graph, schedules }: { graph: Graph; schedules: JourneySegment[][] } =
     useMemo(() => {
-      const line = new MetroLine(1);
+      const line = new MetroLine("1");
       const graph = line.Graph;
       const schedules = [line.Journey];
       return { graph, schedules };
