@@ -4,11 +4,12 @@ import { Text, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { lines } from "./metro_lines.json";
 import { coordinates } from "./madrid_station_coordinates.json";
-import { normalizeCoordinates } from "./utilities";
+import { getMapAspectRatio, normalizeCoordinates } from "./utilities";
 
 type LineNumber = keyof typeof lines;
 
-const positions = normalizeCoordinates(coordinates, 20);
+const aspectRatio = getMapAspectRatio(coordinates);
+const positions = normalizeCoordinates(coordinates, 20 * aspectRatio, 20);
 
 class MetroLine {
   private lineNumber: LineNumber;
@@ -17,6 +18,7 @@ class MetroLine {
   private vertices?: Vertex[];
   private edges?: Edge[];
   private loop: boolean;
+  private journey: JourneySegment[];
   constructor(lineNumber: LineNumber, loop: boolean = false) {
     this.lineNumber = lineNumber;
     this.loop = loop;
@@ -24,6 +26,7 @@ class MetroLine {
     this.stations = lines[lineNumber].stations;
     this.vertices = undefined;
     this.edges = undefined;
+    this.journey = [];
   }
   public get Color(): string {
     return this.color;
@@ -72,17 +75,17 @@ class MetroLine {
 
   public get Journey(): JourneySegment[] {
     const slowness = 1;
-    const journeySchedule: JourneySegment[] = this.Edges.map(
-      ({ source, target }, i) => {
+    if (!this.journey.length) {
+      this.journey = this.Edges.map(({ source, target }, i) => {
         return {
           source,
           target,
           startTime: i * slowness,
           endTime: (i + 1) * slowness,
         };
-      }
-    );
-    return journeySchedule;
+      });
+    }
+    return this.journey;
   }
 }
 
@@ -135,6 +138,7 @@ const VertexMesh: React.FC<{ vertex: Vertex }> = ({ vertex }) => {
         <sphereGeometry args={[0.15, 16, 16]} />
         <meshBasicMaterial color="white" />
       </mesh>
+      {/* <Float rotationIntensity={0.02}> */}
       <Text
         position={[
           vertex.position.x,
@@ -148,6 +152,7 @@ const VertexMesh: React.FC<{ vertex: Vertex }> = ({ vertex }) => {
       >
         {vertex.id}
       </Text>
+      {/* </Float> */}
     </group>
   );
 };
@@ -182,7 +187,7 @@ const CapsuleTraveler: React.FC<{
 }> = ({ schedule, vertexMap }) => {
   const capsuleRef = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
-    const t = clock.elapsedTime;
+    const t = clock.elapsedTime % schedule[schedule.length - 1].endTime;
     const currentPos = new THREE.Vector3();
     const currentQuat = new THREE.Quaternion();
 
@@ -243,7 +248,7 @@ const CapsuleTraveler: React.FC<{
   return (
     <mesh ref={capsuleRef}>
       <capsuleGeometry args={[0.1, 0.5, 4, 8]} />
-      <meshBasicMaterial color="white" />
+      <meshBasicMaterial color="silver" />
     </mesh>
   );
 };
@@ -293,9 +298,12 @@ const Graph3D: React.FC<{
 const Scene: React.FC = () => {
   const { graph, schedules }: { graph: Graph; schedules: JourneySegment[][] } =
     useMemo(() => {
-      const line = new MetroLine("1");
-      const graph = line.Graph;
-      const schedules = [line.Journey];
+      const lines: MetroLine[] = ["1", "2"].map((lineNumber) => {
+        return new MetroLine(lineNumber as LineNumber);
+      });
+      const network = new MetroNetwork(lines);
+      const graph = network.Graph;
+      const schedules = network.Journeys;
       return { graph, schedules };
     }, []);
   const { camera } = useThree();
