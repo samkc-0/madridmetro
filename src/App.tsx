@@ -303,7 +303,7 @@ const Graph3D: React.FC<{
 const Scene: React.FC = () => {
   const { graph, schedules }: { graph: Graph; schedules: JourneySegment[][] } =
     useMemo(() => {
-      const lines: MetroLine[] = ["1", "2"].map((lineNumber) => {
+      const lines: MetroLine[] = ["1", "2", "3"].map((lineNumber) => {
         return new MetroLine(lineNumber as LineNumber);
       });
       const network = new MetroNetwork(lines);
