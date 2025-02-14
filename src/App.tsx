@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Text, OrbitControls } from "@react-three/drei";
+import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { lines } from "./metro_lines.json";
 import { coordinates } from "./madrid_station_coordinates.json";
@@ -139,19 +139,24 @@ const VertexMesh: React.FC<{ vertex: Vertex }> = ({ vertex }) => {
         <meshBasicMaterial color="white" />
       </mesh>
       {/* <Float rotationIntensity={0.02}> */}
-      <Text
+      <Html
         position={[
           vertex.position.x,
-          vertex.position.y + 0.3,
+          vertex.position.y + 0.4,
           vertex.position.z,
         ]}
-        fontSize={0.2}
-        color="black"
-        anchorX="center"
-        anchorY="middle"
+        distanceFactor={4}
       >
-        {vertex.id}
-      </Text>
+        <span
+          style={{
+            textAlign: "center",
+            fontFamily: "monospace",
+            fontSize: "2rem",
+          }}
+        >
+          {vertex.id}
+        </span>
+      </Html>
       {/* </Float> */}
     </group>
   );
