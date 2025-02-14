@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeCoordinates } from "./utilities";
+import { getMapAspectRatio, normalizeCoordinates } from "./utilities";
 
 describe("normalizeCoordinates", () => {
   it("should normalize coordinates between 0 and 1", () => {
@@ -55,5 +55,17 @@ describe("normalizeCoordinates", () => {
     const normalized = normalizeCoordinates(coordinates);
 
     expect(normalized).toEqual({});
+  });
+});
+
+describe("getAspectRatio", () => {
+  it("gets the aspect ratio", () => {
+    const monitor = {
+      "top-left": { x: 55 + 0, y: 90 + 720 },
+      "top-right": { x: 55 + 1280, y: 90 + 720 },
+      "bottom-left": { x: 55 + 0, y: 90 + 0 },
+      "bottom-right": { x: 55 + 1280, y: 90 + 720 },
+    };
+    expect(getMapAspectRatio(monitor)).toBe(1280 / 720);
   });
 });

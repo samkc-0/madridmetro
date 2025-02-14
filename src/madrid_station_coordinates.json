@@ -32,6 +32,24 @@
     "Congosto": { "x": 1040, "y": 1284 },
     "La Gavia": { "x": 1051, "y": 1312 },
     "Las Suertes": { "x": 1068, "y": 1329 },
-    "Valdecarros": { "x": 1082, "y": 1343 }
+    "Valdecarros": { "x": 1082, "y": 1343 },
+    "Canal": { "x": 785, "y": 760 },
+    "Quevedo": { "x": 785, "y": 780 },
+    "San Bernardo": { "x": 785, "y": 808 },
+    "Noviciado": { "x": 785, "y": 881 },
+    "Santo Domingo": { "x": 785, "y": 921 },
+    "Ópera": { "x": 785, "y": 963 },
+    "Sevilla": { "x": 891, "y": 965 },
+    "Banco de España": { "x": 934, "y": 945 },
+    "Retiro": { "x": 959, "y": 921 },
+    "Príncipe de Vergara": { "x": 976, "y": 903 },
+    "Goya": { "x": 1013, "y": 865 },
+    "Manuel Becerra": { "x": 1046, "y": 835 },
+    "Ventas": { "x": 1082, "y": 802 },
+    "La Elipa": { "x": 1134, "y": 851 },
+    "La Almudena": { "x": 1168, "y": 885 },
+    "Alsacia": { "x": 1205, "y": 920 },
+    "Avenida de Guadalajara": { "x": 1247, "y": 920 },
+    "Las Rosas": { "x": 1286, "y": 920 }
   }
 }
