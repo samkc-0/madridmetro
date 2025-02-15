@@ -23,9 +23,6 @@ const EdgeMesh: React.FC<{
   );
 };
 
-/**
- * --- COMPONENTES DEL GRAFO ---
- */
 const VertexMesh: React.FC<{ vertex: Vertex }> = ({ vertex }) => {
   return (
     <group>
@@ -33,7 +30,6 @@ const VertexMesh: React.FC<{ vertex: Vertex }> = ({ vertex }) => {
         <sphereGeometry args={[0.15, 16, 16]} />
         <meshBasicMaterial color="white" />
       </mesh>
-      {/* <Float rotationIntensity={0.02}> */}
       <Html
         position={[
           vertex.position.x,
@@ -52,14 +48,10 @@ const VertexMesh: React.FC<{ vertex: Vertex }> = ({ vertex }) => {
           {vertex.id}
         </span>
       </Html>
-      {/* </Float> */}
     </group>
   );
 };
 
-/**
- * --- COMPONENTE DEL GRAFO 3D ---
- */
 export const Graph3D: React.FC<{
   graph: Graph;
   journeySchedules?: JourneySegment[][];
