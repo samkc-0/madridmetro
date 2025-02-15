@@ -35,8 +35,8 @@ export function normalizeCoordinates(
 
   for (const [station, coord] of Object.entries(coordinates)) {
     normalized[station] = {
-      x: ((coord.x - minX) / (maxX - minX)) * scaleFactorX,
-      y: ((coord.y - minY) / (maxY - minY)) * scaleFactorY,
+      x: ((coord.x - minX) / (maxX - minX) - 0.5) * scaleFactorX,
+      y: ((coord.y - minY) / (maxY - minY) - 0.5) * scaleFactorY,
     };
   }
 
