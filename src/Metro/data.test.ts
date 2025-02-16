@@ -1,6 +1,6 @@
 import { test, expect } from "vitest";
-import { coordinates } from "./madrid_station_coordinates.json";
-import { lines } from "./metro_lines.json";
+import { coordinates } from "./data/stations.json";
+import { lines } from "./data/lines.json";
 
 const allStations = Object.values(lines).flatMap((line) => line.stations);
 const uniqueStations = [...new Set(allStations)];
