@@ -4,7 +4,12 @@ import { coordinates } from "./data/stations.json";
 import { getMapAspectRatio, normalizeCoordinates } from "./utilities";
 
 const aspectRatio = getMapAspectRatio(coordinates);
-const positions = normalizeCoordinates(coordinates, 20 * aspectRatio, 20);
+const scaleFactor = 32;
+const positions = normalizeCoordinates(
+  coordinates,
+  scaleFactor * aspectRatio,
+  scaleFactor
+);
 
 export type LineNumber = keyof typeof lines;
 
