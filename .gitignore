@@ -136,3 +136,4 @@ dist
 .pnp.*
 
 backup/
+.DS_Store
