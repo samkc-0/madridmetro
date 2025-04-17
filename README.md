@@ -4,7 +4,6 @@
 
 Roadmap:
 
-- Add Lines 7, 9, 10, 11, 12.
 - Move data to a backend (it's in JSON files right now).
 - CapsuleTraveler follows (approximately) real-life schedule.
 - Select a train to follow.
