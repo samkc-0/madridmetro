@@ -17,4 +17,4 @@ const madridLines: MetroLine[] = [
   return new MetroLine(lineNumber as LineNumber);
 });
 
-export const madrid = new MetroNetwork(madridLines);
+export const Madrid = new MetroNetwork(madridLines);

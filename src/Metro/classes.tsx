@@ -1,7 +1,11 @@
 import * as THREE from "three";
-import { lines } from "./data/lines.json";
-import { coordinates } from "./data/stations.json";
-import { getMapAspectRatio, normalizeCoordinates } from "./utilities";
+
+import { lines } from "@/metro/data/lines.json";
+import type { Edge, JourneySegment, Vertex } from "@/types/graph";
+
+export type LineNumber = keyof typeof lines;
+import { coordinates } from "@/metro/data/stations.json";
+import { getMapAspectRatio, normalizeCoordinates } from "@/metro/utilities";
 
 const aspectRatio = getMapAspectRatio(coordinates);
 const scaleFactor = 32;
@@ -10,8 +14,6 @@ const positions = normalizeCoordinates(
   scaleFactor * aspectRatio,
   scaleFactor,
 );
-
-export type LineNumber = keyof typeof lines;
 
 interface IMetroLine {
   Vertices: Vertex[];

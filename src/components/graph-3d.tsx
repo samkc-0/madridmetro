@@ -1,7 +1,9 @@
+import * as THREE from "three";
 import { Html } from "@react-three/drei";
 import { useMemo, memo } from "react";
-import * as THREE from "three";
-import { CapsuleTraveler } from "./CapsuleTraveler";
+
+import type { Graph, Vertex, JourneySegment } from "@/types/graph";
+import { CapsuleTraveler } from "@/components/capsule-traveler";
 
 const EdgeMesh: React.FC<{
   start: THREE.Vector3;
@@ -59,7 +61,7 @@ export const Graph3D: React.FC<{
 }> = ({ graph, journeySchedules }) => {
   const vertexMap = useMemo(
     () => new Map<string, Vertex>(graph.vertices.map((v) => [v.id, v])),
-    [graph.vertices]
+    [graph.vertices],
   );
   return (
     <group name="graph-3d" rotation-x={0}>

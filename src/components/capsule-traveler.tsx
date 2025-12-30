@@ -1,6 +1,8 @@
+import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
-import * as THREE from "three";
+
+import type { Vertex, JourneySegment } from "@/types/graph";
 
 // Used to represent a train on the metro network
 export const CapsuleTraveler: React.FC<{
@@ -42,7 +44,7 @@ export const CapsuleTraveler: React.FC<{
       }
     } else {
       const segment = schedule.find(
-        (seg) => t >= seg.startTime && t <= seg.endTime
+        (seg) => t >= seg.startTime && t <= seg.endTime,
       );
       if (segment) {
         const sourceVertex = vertexMap.get(segment.source);

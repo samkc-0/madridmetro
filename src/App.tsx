@@ -1,14 +1,15 @@
 import React, { useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { MapControls } from "@react-three/drei";
-import { Graph3D } from "./Components/Graph3D";
-import { madrid } from "./Metro/madrid";
+
+import { Graph3D } from "@/components/graph-3d";
+import { Madrid } from "@/metro/madrid";
 
 const Scene: React.FC = () => {
   const { graph, schedules }: { graph: Graph; schedules: JourneySegment[][] } =
     useMemo(() => {
-      const graph = madrid.Graph;
-      const schedules = madrid.Journeys;
+      const graph = Madrid.Graph;
+      const schedules = Madrid.Journeys;
       return { graph, schedules };
     }, []);
 
