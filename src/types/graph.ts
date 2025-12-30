@@ -8,6 +8,7 @@ export type Vertex = {
 export type Edge = {
   id: string;
   source: string;
+  target: string;
   color?: string;
 };
 

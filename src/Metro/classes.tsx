@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 import { lines } from "@/metro/data/lines.json";
-import type { Edge, JourneySegment, Vertex } from "@/types/graph";
+import type { Graph, Edge, JourneySegment, Vertex } from "@/types/graph";
 
 export type LineNumber = keyof typeof lines;
 import { coordinates } from "@/metro/data/stations.json";
@@ -14,6 +14,19 @@ const positions = normalizeCoordinates(
   scaleFactor * aspectRatio,
   scaleFactor,
 );
+
+function randomUUID() {
+  if (self?.crypto?.randomUUID) {
+    return self.crypto.randomUUID();
+  } else {
+    let now = Date.now();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = (now + Math.random() * 16) % 16 | 0;
+      now = Math.floor(now / 16);
+      return (c == "x" ? r : (r & 0x3) | 0x8).toString(16);
+    });
+  }
+}
 
 interface IMetroLine {
   Vertices: Vertex[];
@@ -65,6 +78,7 @@ export class MetroLine implements IMetroLine {
     if (this.edges == undefined) {
       this.edges = this.stations.slice(1).map((_, i) => {
         return {
+          id: randomUUID(),
           source: this.stations[i],
           target: this.stations[i + 1],
           color: this.color,
@@ -72,6 +86,7 @@ export class MetroLine implements IMetroLine {
       });
       if (this.loop)
         this.edges.push({
+          id: randomUUID(),
           source: this.stations[this.stations.length - 1],
           target: this.stations[0],
           color: this.color,

@@ -5,6 +5,8 @@ import { MapControls } from "@react-three/drei";
 import { Graph3D } from "@/components/graph-3d";
 import { Madrid } from "@/metro/madrid";
 
+import type { Graph, JourneySegment } from "@/types/graph";
+
 const Scene: React.FC = () => {
   const { graph, schedules }: { graph: Graph; schedules: JourneySegment[][] } =
     useMemo(() => {
