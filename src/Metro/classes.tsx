@@ -8,12 +8,18 @@ const scaleFactor = 32;
 const positions = normalizeCoordinates(
   coordinates,
   scaleFactor * aspectRatio,
-  scaleFactor
+  scaleFactor,
 );
 
 export type LineNumber = keyof typeof lines;
 
-export class MetroLine {
+interface IMetroLine {
+  Vertices: Vertex[];
+  Edges: Edge[];
+  Journey: JourneySegment[];
+}
+
+export class MetroLine implements IMetroLine {
   private lineNumber: LineNumber;
   private color: string;
   private stations: string[];
@@ -91,7 +97,12 @@ export class MetroLine {
   }
 }
 
-export class MetroNetwork {
+interface IMetroNetwork {
+  Graph: Graph;
+  Journeys: JourneySegment[][];
+}
+
+export class MetroNetwork implements IMetroNetwork {
   private vertices: Vertex[];
   private edges: Edge[];
   private journeys: JourneySegment[][];
