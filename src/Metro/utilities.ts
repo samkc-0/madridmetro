@@ -6,7 +6,7 @@
 export function normalizeCoordinates(
   coordinates: Record<string, { x: number; y: number }>,
   scaleFactorX: number = 1,
-  scaleFactorY: number | undefined = undefined
+  scaleFactorY: number | undefined = undefined,
 ) {
   // Si no hay coordenadas, regresamos un objeto vacío
   if (Object.keys(coordinates).length === 0) {
