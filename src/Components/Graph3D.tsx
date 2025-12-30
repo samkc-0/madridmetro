@@ -1,4 +1,5 @@
 import { Html } from "@react-three/drei";
+import { useMemo, memo } from "react";
 import * as THREE from "three";
 import { CapsuleTraveler } from "./CapsuleTraveler";
 
@@ -6,7 +7,7 @@ const EdgeMesh: React.FC<{
   start: THREE.Vector3;
   end: THREE.Vector3;
   color?: string;
-}> = ({ start, end, color = "gray" }) => {
+}> = memo(({ start, end, color = "gray" }) => {
   const distance = start.distanceTo(end);
   const midpoint = new THREE.Vector3()
     .addVectors(start, end)
@@ -21,9 +22,9 @@ const EdgeMesh: React.FC<{
       <meshBasicMaterial color={color} />
     </mesh>
   );
-};
+});
 
-const VertexMesh: React.FC<{ vertex: Vertex }> = ({ vertex }) => {
+const VertexMesh: React.FC<{ vertex: Vertex }> = memo(({ vertex }) => {
   return (
     <group>
       <mesh position={vertex.position}>
@@ -50,14 +51,15 @@ const VertexMesh: React.FC<{ vertex: Vertex }> = ({ vertex }) => {
       </Html>
     </group>
   );
-};
+});
 
 export const Graph3D: React.FC<{
   graph: Graph;
   journeySchedules?: JourneySegment[][];
 }> = ({ graph, journeySchedules }) => {
-  const vertexMap = new Map<string, Vertex>(
-    graph.vertices.map((v) => [v.id, v])
+  const vertexMap = useMemo(
+    () => new Map<string, Vertex>(graph.vertices.map((v) => [v.id, v])),
+    [graph.vertices]
   );
   return (
     <group name="graph-3d" rotation-x={0}>
