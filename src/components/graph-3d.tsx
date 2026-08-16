@@ -25,7 +25,7 @@ const EdgeLines: React.FC<{
   const { size } = useThree();
   const [lineSegments] = useState(() => {
     const geometry = new LineSegmentsGeometry();
-    const material = new LineMaterial({ linewidth: 3, vertexColors: true });
+    const material = new LineMaterial({ linewidth: 6, vertexColors: true });
     return new LineSegments2(geometry, material);
   });
 
