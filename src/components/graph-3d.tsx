@@ -8,10 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
-import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
-import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+import { useFrame, type ThreeEvent } from "@react-three/fiber";
 
 import type { Graph, Vertex } from "@/types/graph";
 import { CapsuleTraveler } from "@/components/capsule-traveler";
@@ -63,47 +60,57 @@ const LiveTrains: React.FC<{ vertexMap: Map<string, Vertex> }> = ({
   );
 };
 
-// Renders every edge as a single batched draw call (fat lines) instead
-// of one cylinder mesh per edge.
-const EdgeLines: React.FC<{
+// Renders every edge as cylinders sharing one InstancedMesh -- a single
+// draw call, like the fat-lines approach, but real 3D tube geometry with a
+// constant *world-space* radius (scales/foreshortens with the camera like
+// everything else) rather than fat lines' constant *screen-pixel* width.
+const EdgeCylinders: React.FC<{
   graph: Graph;
   vertexMap: Map<string, Vertex>;
 }> = ({ graph, vertexMap }) => {
-  const { size } = useThree();
-  const [lineSegments] = useState(() => {
-    const geometry = new LineSegmentsGeometry();
-    const material = new LineMaterial({ linewidth: 6, vertexColors: true });
-    return new LineSegments2(geometry, material);
-  });
+  const meshRef = useRef<THREE.InstancedMesh>(null);
 
   useLayoutEffect(() => {
-    const positions: number[] = [];
-    const colors: number[] = [];
+    const mesh = meshRef.current;
+    if (!mesh) return;
+
+    const matrix = new THREE.Matrix4();
+    const midpoint = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+    const quaternion = new THREE.Quaternion();
+    const scale = new THREE.Vector3();
     const color = new THREE.Color();
+    const upAxis = new THREE.Vector3(0, 1, 0);
+
+    let count = 0;
     for (const edge of graph.edges) {
       const start = vertexMap.get(edge.source);
       const end = vertexMap.get(edge.target);
       if (!start || !end) continue;
-      positions.push(
-        start.position.x,
-        start.position.y,
-        start.position.z,
-        end.position.x,
-        end.position.y,
-        end.position.z,
-      );
-      color.set(edge.color ?? "gray");
-      colors.push(color.r, color.g, color.b, color.r, color.g, color.b);
+
+      const distance = start.position.distanceTo(end.position);
+      midpoint.addVectors(start.position, end.position).multiplyScalar(0.5);
+      direction.subVectors(end.position, start.position).normalize();
+      quaternion.setFromUnitVectors(upAxis, direction);
+      scale.set(1, distance, 1);
+
+      matrix.compose(midpoint, quaternion, scale);
+      mesh.setMatrixAt(count, matrix);
+      mesh.setColorAt(count, color.set(edge.color ?? "gray"));
+      count++;
     }
-    lineSegments.geometry.setPositions(positions);
-    lineSegments.geometry.setColors(colors);
-  }, [graph.edges, vertexMap, lineSegments]);
 
-  useEffect(() => {
-    lineSegments.material.resolution.set(size.width, size.height);
-  }, [size, lineSegments]);
+    mesh.count = count;
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  }, [graph.edges, vertexMap]);
 
-  return <primitive object={lineSegments} />;
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, graph.edges.length]}>
+      <cylinderGeometry args={[0.05, 0.05, 1, 8]} />
+      <meshBasicMaterial />
+    </instancedMesh>
+  );
 };
 
 const StationLabel: React.FC<{ vertex: Vertex }> = memo(({ vertex }) => {
@@ -200,7 +207,7 @@ export const Graph3D: React.FC<{ graph: Graph }> = ({ graph }) => {
   return (
     <group name="graph-3d" rotation-x={0}>
       <Stations vertices={graph.vertices} />
-      <EdgeLines graph={graph} vertexMap={vertexMap} />
+      <EdgeCylinders graph={graph} vertexMap={vertexMap} />
       <LiveTrains vertexMap={vertexMap} />
     </group>
   );
