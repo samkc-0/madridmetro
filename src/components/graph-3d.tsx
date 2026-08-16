@@ -121,17 +121,17 @@ const StationLabel: React.FC<{ vertex: Vertex; color: string }> = memo(
 
     useLayoutEffect(() => {
       troikaText.text = vertex.id;
-      troikaText.font = "/fonts/rubik/Rubik-Regular.ttf";
+      troikaText.font = "/fonts/rubik/Rubik-SemiBold.ttf";
       troikaText.fontSize = 0.3;
       troikaText.color = color;
       troikaText.anchorX = "center";
       troikaText.anchorY = "bottom";
-      // A soft dark halo keeps the label legible over busy same-colored
-      // lines/stations behind it, without a hard outline ring.
+      // Barely-there dark haze -- just enough that the line color behind
+      // the text doesn't wash it out, not a visible outline/ring.
       troikaText.outlineColor = "black";
-      troikaText.outlineOpacity = 0.5;
-      troikaText.outlineBlur = "25%";
-      troikaText.outlineWidth = "6%";
+      troikaText.outlineOpacity = 0.2;
+      troikaText.outlineBlur = "50%";
+      troikaText.outlineWidth = "2%";
       troikaText.sync();
       return () => troikaText.dispose();
     }, [troikaText, vertex.id, color]);
