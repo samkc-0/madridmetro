@@ -68,7 +68,10 @@ export class MetroLine implements IMetroLine {
         const { x, y } = positions[name];
         return {
           id: name,
-          position: new THREE.Vector3(x, 0, y),
+          // y is latitude (north-positive); negate it so higher latitude
+          // maps to world -Z, which renders further from the camera
+          // ("up"/away) rather than closer ("down"/toward the viewer).
+          position: new THREE.Vector3(x, 0, -y),
         };
       });
     }
