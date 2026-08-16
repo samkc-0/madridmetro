@@ -1,31 +1,63 @@
 import * as THREE from "three";
 import { Text } from "troika-three-text";
-import { useMemo, memo, useLayoutEffect, useRef, useState } from "react";
-import { useFrame } from "@react-three/fiber";
+import {
+  useMemo,
+  memo,
+  useLayoutEffect,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
+import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 
 import type { Graph, Vertex, JourneySegment } from "@/types/graph";
 import { CapsuleTraveler } from "@/components/capsule-traveler";
 
-const EdgeMesh: React.FC<{
-  start: THREE.Vector3;
-  end: THREE.Vector3;
-  color?: string;
-}> = memo(({ start, end, color = "gray" }) => {
-  const distance = start.distanceTo(end);
-  const midpoint = new THREE.Vector3()
-    .addVectors(start, end)
-    .multiplyScalar(0.5);
-  const direction = new THREE.Vector3().subVectors(end, start).normalize();
-  const axis = new THREE.Vector3(0, 1, 0);
-  const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, direction);
+// Renders every edge as a single batched draw call (fat lines) instead
+// of one cylinder mesh per edge.
+const EdgeLines: React.FC<{
+  graph: Graph;
+  vertexMap: Map<string, Vertex>;
+}> = ({ graph, vertexMap }) => {
+  const { size } = useThree();
+  const [lineSegments] = useState(() => {
+    const geometry = new LineSegmentsGeometry();
+    const material = new LineMaterial({ linewidth: 3, vertexColors: true });
+    return new LineSegments2(geometry, material);
+  });
 
-  return (
-    <mesh position={midpoint} quaternion={quaternion}>
-      <cylinderGeometry args={[0.05, 0.05, distance, 8]} />
-      <meshBasicMaterial color={color} />
-    </mesh>
-  );
-});
+  useLayoutEffect(() => {
+    const positions: number[] = [];
+    const colors: number[] = [];
+    const color = new THREE.Color();
+    for (const edge of graph.edges) {
+      const start = vertexMap.get(edge.source);
+      const end = vertexMap.get(edge.target);
+      if (!start || !end) continue;
+      positions.push(
+        start.position.x,
+        start.position.y,
+        start.position.z,
+        end.position.x,
+        end.position.y,
+        end.position.z,
+      );
+      color.set(edge.color ?? "gray");
+      colors.push(color.r, color.g, color.b, color.r, color.g, color.b);
+    }
+    lineSegments.geometry.setPositions(positions);
+    lineSegments.geometry.setColors(colors);
+  }, [graph.edges, vertexMap, lineSegments]);
+
+  useEffect(() => {
+    lineSegments.material.resolution.set(size.width, size.height);
+  }, [size, lineSegments]);
+
+  return <primitive object={lineSegments} />;
+};
 
 const VertexMesh: React.FC<{ vertex: Vertex }> = memo(({ vertex }) => {
   return (
@@ -104,19 +136,7 @@ export const Graph3D: React.FC<{
         <VertexMesh key={vertex.id} vertex={vertex} />
       ))}
       <StationLabels vertices={graph.vertices} />
-      {graph.edges.map((edge, index) => {
-        const startVertex = vertexMap.get(edge.source);
-        const endVertex = vertexMap.get(edge.target);
-        if (!startVertex || !endVertex) return null;
-        return (
-          <EdgeMesh
-            key={index}
-            start={startVertex.position}
-            end={endVertex.position}
-            color={edge.color}
-          />
-        );
-      })}
+      <EdgeLines graph={graph} vertexMap={vertexMap} />
       {journeySchedules?.map((schedule, i) => (
         <CapsuleTraveler
           key={`journey-${i}`}
