@@ -1,6 +1,7 @@
 import * as THREE from "three";
-import { Html } from "@react-three/drei";
-import { useMemo, memo } from "react";
+import { Text } from "troika-three-text";
+import { useMemo, memo, useLayoutEffect, useRef, useState } from "react";
+import { useFrame } from "@react-three/fiber";
 
 import type { Graph, Vertex, JourneySegment } from "@/types/graph";
 import { CapsuleTraveler } from "@/components/capsule-traveler";
@@ -28,32 +29,56 @@ const EdgeMesh: React.FC<{
 
 const VertexMesh: React.FC<{ vertex: Vertex }> = memo(({ vertex }) => {
   return (
-    <group>
-      <mesh position={vertex.position}>
-        <sphereGeometry args={[0.15, 16, 16]} />
-        <meshBasicMaterial color="white" />
-      </mesh>
-      <Html
-        position={[
-          vertex.position.x,
-          vertex.position.y + 0.4,
-          vertex.position.z,
-        ]}
-        distanceFactor={4}
-      >
-        <span
-          style={{
-            textAlign: "center",
-            fontFamily: "monospace",
-            fontSize: "2rem",
-          }}
-        >
-          {vertex.id}
-        </span>
-      </Html>
-    </group>
+    <mesh position={vertex.position}>
+      <sphereGeometry args={[0.15, 16, 16]} />
+      <meshBasicMaterial color="white" />
+    </mesh>
   );
 });
+
+const StationLabel: React.FC<{ vertex: Vertex }> = memo(({ vertex }) => {
+  const [troikaText] = useState(() => new Text());
+
+  useLayoutEffect(() => {
+    troikaText.text = vertex.id;
+    troikaText.fontSize = 0.3;
+    troikaText.color = "black";
+    troikaText.anchorX = "center";
+    troikaText.anchorY = "bottom";
+    troikaText.sync();
+    return () => troikaText.dispose();
+  }, [troikaText, vertex.id]);
+
+  return (
+    <primitive
+      object={troikaText}
+      position={[
+        vertex.position.x,
+        vertex.position.y + 0.4,
+        vertex.position.z,
+      ]}
+    />
+  );
+});
+
+// All labels live in one group so a single per-frame quaternion copy
+// billboards every station name toward the camera, instead of each
+// label tracking the camera independently.
+const StationLabels: React.FC<{ vertices: Vertex[] }> = memo(
+  ({ vertices }) => {
+    const groupRef = useRef<THREE.Group>(null);
+    useFrame(({ camera }) => {
+      groupRef.current?.quaternion.copy(camera.quaternion);
+    });
+    return (
+      <group ref={groupRef}>
+        {vertices.map((vertex) => (
+          <StationLabel key={vertex.id} vertex={vertex} />
+        ))}
+      </group>
+    );
+  },
+);
 
 export const Graph3D: React.FC<{
   graph: Graph;
@@ -68,6 +93,7 @@ export const Graph3D: React.FC<{
       {graph.vertices.map((vertex) => (
         <VertexMesh key={vertex.id} vertex={vertex} />
       ))}
+      <StationLabels vertices={graph.vertices} />
       {graph.edges.map((edge, index) => {
         const startVertex = vertexMap.get(edge.source);
         const endVertex = vertexMap.get(edge.target);
