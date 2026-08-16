@@ -1,14 +1,5 @@
 # Madrid Metro 3D
 
-<img width="1285" alt="Captura de pantalla 2025-02-19 a las 19 57 09" src="https://github.com/user-attachments/assets/4de69992-e98b-44ba-9370-679a5b1c5c6c" />
+A live view of Madrid's metro networks in 3D.
 
-Roadmap:
-
-- Move data to a backend (it's in JSON files right now).
-- CapsuleTraveler follows (approximately) real-life schedule.
-- Select a train to follow.
-- Toggle visibility of a given metro line.
-- Utilize shaders for performance.
-- Handle clear rendering of multiple metro lines sharing the same two stations.
-- Station size & color based on the number of metro lines connected.
-- More metro lines after Line 12 (R, Metro Ligero).
+<img width="735" height="458" alt="Captura de pantalla 2026-08-16 a la(s) 20 33 36" src="https://github.com/user-attachments/assets/294e4ac7-136b-4d39-88e0-536f80a67ab3" />
