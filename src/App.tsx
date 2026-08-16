@@ -28,6 +28,7 @@ const Scene: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Canvas
+      dpr={[1, 1.5]}
       camera={{
         fov: 60,
         near: 0.1,
