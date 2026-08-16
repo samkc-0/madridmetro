@@ -10,10 +10,12 @@ export const CapsuleTraveler: React.FC<{
   vertexMap: Map<string, Vertex>;
 }> = ({ schedule, vertexMap }) => {
   const capsuleRef = useRef<THREE.Mesh>(null);
+  const currentPos = useRef(new THREE.Vector3()).current;
+  const currentQuat = useRef(new THREE.Quaternion()).current;
+  const direction = useRef(new THREE.Vector3()).current;
+  const upAxis = useRef(new THREE.Vector3(0, 1, 0)).current;
   useFrame(({ clock }) => {
     const t = clock.elapsedTime % schedule[schedule.length - 1].endTime;
-    const currentPos = new THREE.Vector3();
-    const currentQuat = new THREE.Quaternion();
 
     if (schedule.length === 0) return;
 
@@ -23,10 +25,10 @@ export const CapsuleTraveler: React.FC<{
         currentPos.copy(initialVertex.position);
         const targetVertex = vertexMap.get(schedule[0].target);
         if (targetVertex) {
-          const direction = new THREE.Vector3()
+          direction
             .subVectors(targetVertex.position, initialVertex.position)
             .normalize();
-          currentQuat.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+          currentQuat.setFromUnitVectors(upAxis, direction);
         }
       }
     } else if (t >= schedule[schedule.length - 1].endTime) {
@@ -36,10 +38,10 @@ export const CapsuleTraveler: React.FC<{
         currentPos.copy(lastVertex.position);
         const sourceVertex = vertexMap.get(lastSegment.source);
         if (sourceVertex) {
-          const direction = new THREE.Vector3()
+          direction
             .subVectors(lastVertex.position, sourceVertex.position)
             .normalize();
-          currentQuat.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+          currentQuat.setFromUnitVectors(upAxis, direction);
         }
       }
     } else {
@@ -55,10 +57,10 @@ export const CapsuleTraveler: React.FC<{
           currentPos
             .copy(sourceVertex.position)
             .lerp(targetVertex.position, progress);
-          const direction = new THREE.Vector3()
+          direction
             .subVectors(targetVertex.position, sourceVertex.position)
             .normalize();
-          currentQuat.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+          currentQuat.setFromUnitVectors(upAxis, direction);
         }
       }
     }
