@@ -14,10 +14,12 @@ import type { Graph, Vertex } from "@/types/graph";
 import { CapsuleTraveler } from "@/components/capsule-traveler";
 import { MadridClockTracker, type MadridClock } from "@/metro/madridClock";
 import { computeActiveTrains, type ActiveTrain, type Schedule } from "@/metro/liveTrains";
+import { lineColors, stationLines } from "@/metro/lineInfo";
 import scheduleData from "@/metro/data/schedule.json";
 
 const schedule = scheduleData as Schedule;
 const ACTIVE_TRAINS_POLL_MS = 5000;
+const EMPTY_ACTIVE_LINES = new Set<string>();
 
 // Trains are a pure function of the current real time (see liveTrains.ts),
 // so the only state that needs a React re-render is *which* trains exist --
@@ -113,21 +115,30 @@ const EdgeCylinders: React.FC<{
   );
 };
 
-const StationLabel: React.FC<{ vertex: Vertex }> = memo(({ vertex }) => {
-  const [troikaText] = useState(() => new Text());
+const StationLabel: React.FC<{ vertex: Vertex; color: string }> = memo(
+  ({ vertex, color }) => {
+    const [troikaText] = useState(() => new Text());
 
-  useLayoutEffect(() => {
-    troikaText.text = vertex.id;
-    troikaText.fontSize = 0.3;
-    troikaText.color = "black";
-    troikaText.anchorX = "center";
-    troikaText.anchorY = "bottom";
-    troikaText.sync();
-    return () => troikaText.dispose();
-  }, [troikaText, vertex.id]);
+    useLayoutEffect(() => {
+      troikaText.text = vertex.id;
+      troikaText.font = "/fonts/rubik/Rubik-Regular.ttf";
+      troikaText.fontSize = 0.3;
+      troikaText.color = color;
+      troikaText.anchorX = "center";
+      troikaText.anchorY = "bottom";
+      // A soft dark halo keeps the label legible over busy same-colored
+      // lines/stations behind it, without a hard outline ring.
+      troikaText.outlineColor = "black";
+      troikaText.outlineOpacity = 0.5;
+      troikaText.outlineBlur = "25%";
+      troikaText.outlineWidth = "6%";
+      troikaText.sync();
+      return () => troikaText.dispose();
+    }, [troikaText, vertex.id, color]);
 
-  return <primitive object={troikaText} />;
-});
+    return <primitive object={troikaText} />;
+  },
+);
 
 // The sphere and its label are one component so hover/tap state stays
 // local to each station instead of needing to be coordinated externally.
@@ -138,10 +149,16 @@ const StationLabel: React.FC<{ vertex: Vertex }> = memo(({ vertex }) => {
 const Station: React.FC<{
   vertex: Vertex;
   billboardRefs: React.MutableRefObject<Map<string, THREE.Group>>;
-}> = memo(({ vertex, billboardRefs }) => {
+  activeLines: Set<string>;
+}> = memo(({ vertex, billboardRefs, activeLines }) => {
   const [hovered, setHovered] = useState(false);
   const [tapped, setTapped] = useState(false);
-  const showLabel = hovered || tapped;
+  const linesHere = stationLines[vertex.id] ?? [];
+  const isInterchange = linesHere.length > 1;
+  const sphereColor = isInterchange ? "white" : (lineColors[linesHere[0]] ?? "white");
+  const sphereRadius = isInterchange ? 0.15 : 0.11;
+  const onActiveLine = linesHere.some((line) => activeLines.has(line));
+  const showLabel = hovered || tapped || onActiveLine;
 
   return (
     <group>
@@ -160,8 +177,8 @@ const Station: React.FC<{
           setTapped((t) => !t);
         }}
       >
-        <sphereGeometry args={[0.15, 16, 16]} />
-        <meshBasicMaterial color="white" />
+        <sphereGeometry args={[sphereRadius, 16, 16]} />
+        <meshBasicMaterial color={sphereColor} />
       </mesh>
       <group
         position={[
@@ -176,37 +193,46 @@ const Station: React.FC<{
             else billboardRefs.current.delete(vertex.id);
           }}
         >
-          {showLabel && <StationLabel vertex={vertex} />}
+          {showLabel && <StationLabel vertex={vertex} color={sphereColor} />}
         </group>
       </group>
     </group>
   );
 });
 
-const Stations: React.FC<{ vertices: Vertex[] }> = memo(({ vertices }) => {
-  const billboardRefs = useRef(new Map<string, THREE.Group>());
-  useFrame(({ camera }) => {
-    billboardRefs.current.forEach((group) =>
-      group.quaternion.copy(camera.quaternion),
+const Stations: React.FC<{ vertices: Vertex[]; activeLines: Set<string> }> =
+  memo(({ vertices, activeLines }) => {
+    const billboardRefs = useRef(new Map<string, THREE.Group>());
+    useFrame(({ camera }) => {
+      billboardRefs.current.forEach((group) =>
+        group.quaternion.copy(camera.quaternion),
+      );
+    });
+    return (
+      <>
+        {vertices.map((vertex) => (
+          <Station
+            key={vertex.id}
+            vertex={vertex}
+            billboardRefs={billboardRefs}
+            activeLines={activeLines}
+          />
+        ))}
+      </>
     );
   });
-  return (
-    <>
-      {vertices.map((vertex) => (
-        <Station key={vertex.id} vertex={vertex} billboardRefs={billboardRefs} />
-      ))}
-    </>
-  );
-});
 
-export const Graph3D: React.FC<{ graph: Graph }> = ({ graph }) => {
+export const Graph3D: React.FC<{
+  graph: Graph;
+  activeLines?: Set<string>;
+}> = ({ graph, activeLines = EMPTY_ACTIVE_LINES }) => {
   const vertexMap = useMemo(
     () => new Map<string, Vertex>(graph.vertices.map((v) => [v.id, v])),
     [graph.vertices],
   );
   return (
     <group name="graph-3d" rotation-x={0}>
-      <Stations vertices={graph.vertices} />
+      <Stations vertices={graph.vertices} activeLines={activeLines} />
       <EdgeCylinders graph={graph} vertexMap={vertexMap} />
       <LiveTrains vertexMap={vertexMap} />
     </group>
