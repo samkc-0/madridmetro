@@ -115,30 +115,32 @@ const EdgeCylinders: React.FC<{
   );
 };
 
-const StationLabel: React.FC<{ vertex: Vertex; color: string }> = memo(
-  ({ vertex, color }) => {
-    const [troikaText] = useState(() => new Text());
+const StationLabel: React.FC<{
+  vertex: Vertex;
+  color: string;
+  outlined: boolean;
+}> = memo(({ vertex, color, outlined }) => {
+  const [troikaText] = useState(() => new Text());
 
-    useLayoutEffect(() => {
-      troikaText.text = vertex.id;
-      troikaText.font = "/fonts/rubik/Rubik-SemiBold.ttf";
-      troikaText.fontSize = 0.3;
-      troikaText.color = color;
-      troikaText.anchorX = "center";
-      troikaText.anchorY = "bottom";
-      // Barely-there dark haze -- just enough that the line color behind
-      // the text doesn't wash it out, not a visible outline/ring.
-      troikaText.outlineColor = "black";
-      troikaText.outlineOpacity = 0.2;
-      troikaText.outlineBlur = "50%";
-      troikaText.outlineWidth = "2%";
-      troikaText.sync();
-      return () => troikaText.dispose();
-    }, [troikaText, vertex.id, color]);
+  useLayoutEffect(() => {
+    troikaText.text = vertex.id;
+    troikaText.font = "/fonts/rubik/Rubik-SemiBold.ttf";
+    troikaText.fontSize = 0.3;
+    troikaText.color = color;
+    troikaText.anchorX = "center";
+    troikaText.anchorY = "bottom";
+    // Thin crisp outline only while actively hovered/tapped -- not a
+    // permanent shadow.
+    troikaText.outlineColor = "black";
+    troikaText.outlineOpacity = outlined ? 1 : 0;
+    troikaText.outlineBlur = 0;
+    troikaText.outlineWidth = outlined ? "3%" : 0;
+    troikaText.sync();
+    return () => troikaText.dispose();
+  }, [troikaText, vertex.id, color, outlined]);
 
-    return <primitive object={troikaText} />;
-  },
-);
+  return <primitive object={troikaText} />;
+});
 
 // The sphere and its label are one component so hover/tap state stays
 // local to each station instead of needing to be coordinated externally.
@@ -156,6 +158,7 @@ const Station: React.FC<{
   const linesHere = stationLines[vertex.id] ?? [];
   const isInterchange = linesHere.length > 1;
   const sphereColor = isInterchange ? "white" : (lineColors[linesHere[0]] ?? "white");
+  const labelColor = isInterchange ? "black" : sphereColor;
   const sphereRadius = isInterchange ? 0.15 : 0.11;
   const onActiveLine = linesHere.some((line) => activeLines.has(line));
   const showLabel = hovered || tapped || onActiveLine;
@@ -193,7 +196,13 @@ const Station: React.FC<{
             else billboardRefs.current.delete(vertex.id);
           }}
         >
-          {showLabel && <StationLabel vertex={vertex} color={sphereColor} />}
+          {showLabel && (
+            <StationLabel
+              vertex={vertex}
+              color={labelColor}
+              outlined={hovered || tapped}
+            />
+          )}
         </group>
       </group>
     </group>
