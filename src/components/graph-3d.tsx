@@ -49,33 +49,43 @@ const StationLabel: React.FC<{ vertex: Vertex }> = memo(({ vertex }) => {
     return () => troikaText.dispose();
   }, [troikaText, vertex.id]);
 
-  return (
-    <primitive
-      object={troikaText}
-      position={[
-        vertex.position.x,
-        vertex.position.y + 0.4,
-        vertex.position.z,
-      ]}
-    />
-  );
+  return <primitive object={troikaText} />;
 });
 
-// All labels live in one group so a single per-frame quaternion copy
-// billboards every station name toward the camera, instead of each
-// label tracking the camera independently.
+// Position lives on the outer (unrotated) group so labels stay at their
+// station's world coordinates; only the inner group's rotation is updated,
+// in one shared per-frame pass, to billboard every label toward the camera
+// without dragging their positions around the origin with it.
 const StationLabels: React.FC<{ vertices: Vertex[] }> = memo(
   ({ vertices }) => {
-    const groupRef = useRef<THREE.Group>(null);
+    const billboardRefs = useRef(new Map<string, THREE.Group>());
     useFrame(({ camera }) => {
-      groupRef.current?.quaternion.copy(camera.quaternion);
+      billboardRefs.current.forEach((group) =>
+        group.quaternion.copy(camera.quaternion),
+      );
     });
     return (
-      <group ref={groupRef}>
+      <>
         {vertices.map((vertex) => (
-          <StationLabel key={vertex.id} vertex={vertex} />
+          <group
+            key={vertex.id}
+            position={[
+              vertex.position.x,
+              vertex.position.y + 0.4,
+              vertex.position.z,
+            ]}
+          >
+            <group
+              ref={(el) => {
+                if (el) billboardRefs.current.set(vertex.id, el);
+                else billboardRefs.current.delete(vertex.id);
+              }}
+            >
+              <StationLabel vertex={vertex} />
+            </group>
+          </group>
         ))}
-      </group>
+      </>
     );
   },
 );
