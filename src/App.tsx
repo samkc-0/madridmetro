@@ -5,22 +5,17 @@ import { MapControls } from "@react-three/drei";
 import { Graph3D } from "@/components/graph-3d";
 import { Madrid } from "@/metro/madrid";
 
-import type { Graph, JourneySegment } from "@/types/graph";
+import type { Graph } from "@/types/graph";
 
 const Scene: React.FC = () => {
-  const { graph, schedules }: { graph: Graph; schedules: JourneySegment[][] } =
-    useMemo(() => {
-      const graph = Madrid.Graph;
-      const schedules = Madrid.Journeys;
-      return { graph, schedules };
-    }, []);
+  const graph: Graph = useMemo(() => Madrid.Graph, []);
 
   return (
     <group name="scene">
       <MapControls makeDefault />
       <ambientLight intensity={0.6} />
       <pointLight position={[10, 10, 10]} />
-      <Graph3D graph={graph} journeySchedules={schedules} />
+      <Graph3D graph={graph} />
     </group>
   );
 };

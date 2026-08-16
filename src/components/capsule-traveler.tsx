@@ -2,73 +2,52 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 
-import type { Vertex, JourneySegment } from "@/types/graph";
+import type { Vertex } from "@/types/graph";
+import type { MadridClock } from "@/metro/madridClock";
+import type { ScheduleStop } from "@/metro/liveTrains";
 
-// Used to represent a train on the metro network
+// Renders one real train: `departureSec` is when it left its first stop
+// (Madrid local seconds-since-midnight), and `stops` gives each subsequent
+// stop's cumulative offset from that departure, straight from the GTFS
+// schedule. Position is a pure function of (now - departureSec), read from
+// the shared clockRef each frame, rather than a synthetic looped animation.
 export const CapsuleTraveler: React.FC<{
-  schedule: JourneySegment[];
+  stops: ScheduleStop[];
+  departureSec: number;
+  clockRef: React.MutableRefObject<MadridClock>;
   vertexMap: Map<string, Vertex>;
-}> = ({ schedule, vertexMap }) => {
+}> = ({ stops, departureSec, clockRef, vertexMap }) => {
   const capsuleRef = useRef<THREE.Mesh>(null);
   const currentPos = useRef(new THREE.Vector3()).current;
   const currentQuat = useRef(new THREE.Quaternion()).current;
   const direction = useRef(new THREE.Vector3()).current;
   const upAxis = useRef(new THREE.Vector3(0, 1, 0)).current;
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime % schedule[schedule.length - 1].endTime;
 
-    if (schedule.length === 0) return;
+  useFrame(() => {
+    const tripDuration = stops[stops.length - 1].offset;
+    const elapsed = Math.min(
+      Math.max(clockRef.current.secondsOfDay - departureSec, 0),
+      tripDuration,
+    );
 
-    if (t < schedule[0].startTime) {
-      const initialVertex = vertexMap.get(schedule[0].source);
-      if (initialVertex) {
-        currentPos.copy(initialVertex.position);
-        const targetVertex = vertexMap.get(schedule[0].target);
-        if (targetVertex) {
-          direction
-            .subVectors(targetVertex.position, initialVertex.position)
-            .normalize();
-          currentQuat.setFromUnitVectors(upAxis, direction);
-        }
-      }
-    } else if (t >= schedule[schedule.length - 1].endTime) {
-      const lastSegment = schedule[schedule.length - 1];
-      const lastVertex = vertexMap.get(lastSegment.target);
-      if (lastVertex) {
-        currentPos.copy(lastVertex.position);
-        const sourceVertex = vertexMap.get(lastSegment.source);
-        if (sourceVertex) {
-          direction
-            .subVectors(lastVertex.position, sourceVertex.position)
-            .normalize();
-          currentQuat.setFromUnitVectors(upAxis, direction);
-        }
-      }
-    } else {
-      const segment = schedule.find(
-        (seg) => t >= seg.startTime && t <= seg.endTime,
-      );
-      if (segment) {
-        const sourceVertex = vertexMap.get(segment.source);
-        const targetVertex = vertexMap.get(segment.target);
-        if (sourceVertex && targetVertex) {
-          const progress =
-            (t - segment.startTime) / (segment.endTime - segment.startTime);
-          currentPos
-            .copy(sourceVertex.position)
-            .lerp(targetVertex.position, progress);
-          direction
-            .subVectors(targetVertex.position, sourceVertex.position)
-            .normalize();
-          currentQuat.setFromUnitVectors(upAxis, direction);
-        }
-      }
-    }
+    let i = 0;
+    while (i < stops.length - 2 && stops[i + 1].offset <= elapsed) i++;
+    const from = stops[i];
+    const to = stops[i + 1];
+    const sourceVertex = vertexMap.get(from.name);
+    const targetVertex = vertexMap.get(to.name);
+    if (!sourceVertex || !targetVertex || !capsuleRef.current) return;
 
-    if (capsuleRef.current) {
-      capsuleRef.current.position.copy(currentPos);
-      capsuleRef.current.quaternion.copy(currentQuat);
-    }
+    const span = to.offset - from.offset;
+    const progress = span > 0 ? (elapsed - from.offset) / span : 0;
+    currentPos.copy(sourceVertex.position).lerp(targetVertex.position, progress);
+    direction
+      .subVectors(targetVertex.position, sourceVertex.position)
+      .normalize();
+    currentQuat.setFromUnitVectors(upAxis, direction);
+
+    capsuleRef.current.position.copy(currentPos);
+    capsuleRef.current.quaternion.copy(currentQuat);
   });
 
   return (

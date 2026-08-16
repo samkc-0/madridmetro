@@ -16,10 +16,3 @@ export type Graph = {
   vertices: Vertex[];
   edges: Edge[];
 };
-
-export type JourneySegment = {
-  source: string;
-  target: string;
-  startTime: number;
-  endTime: number;
-};

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 import { lines } from "@/metro/data/lines.json";
-import type { Graph, Edge, JourneySegment, Vertex } from "@/types/graph";
+import type { Graph, Edge, Vertex } from "@/types/graph";
 
 export type LineNumber = keyof typeof lines;
 import { coordinates } from "@/metro/data/stations.json";
@@ -31,7 +31,6 @@ function randomUUID() {
 interface IMetroLine {
   Vertices: Vertex[];
   Edges: Edge[];
-  Journey: JourneySegment[];
 }
 
 export class MetroLine implements IMetroLine {
@@ -41,7 +40,6 @@ export class MetroLine implements IMetroLine {
   private vertices?: Vertex[];
   private edges?: Edge[];
   private loop: boolean;
-  private journey: JourneySegment[];
   constructor(lineNumber: LineNumber, loop: boolean = false) {
     this.lineNumber = lineNumber;
     this.loop = loop;
@@ -49,7 +47,6 @@ export class MetroLine implements IMetroLine {
     this.stations = lines[lineNumber].stations;
     this.vertices = undefined;
     this.edges = undefined;
-    this.journey = [];
   }
   public get Color(): string {
     return this.color;
@@ -100,37 +97,19 @@ export class MetroLine implements IMetroLine {
   public get Graph(): Graph {
     return { vertices: this.Vertices, edges: this.Edges };
   }
-
-  public get Journey(): JourneySegment[] {
-    const slowness = 1;
-    if (!this.journey.length) {
-      this.journey = this.Edges.map(({ source, target }, i) => {
-        return {
-          source,
-          target,
-          startTime: i * slowness,
-          endTime: (i + 1) * slowness,
-        };
-      });
-    }
-    return this.journey;
-  }
 }
 
 interface IMetroNetwork {
   Graph: Graph;
-  Journeys: JourneySegment[][];
 }
 
 export class MetroNetwork implements IMetroNetwork {
   private vertices: Vertex[];
   private edges: Edge[];
-  private journeys: JourneySegment[][];
   private graph?: Graph;
   constructor(metroLines: MetroLine[]) {
     this.vertices = [];
     this.edges = [];
-    this.journeys = [];
     this.graph = undefined;
     for (const line of metroLines) {
       line.Vertices.forEach((v) => {
@@ -141,7 +120,6 @@ export class MetroNetwork implements IMetroNetwork {
       line.Edges.forEach((e) => {
         this.edges.push(e);
       });
-      this.journeys.push(line.Journey);
     }
   }
   private get stations(): string[] {
@@ -156,8 +134,5 @@ export class MetroNetwork implements IMetroNetwork {
       };
     }
     return this.graph;
-  }
-  public get Journeys(): JourneySegment[][] {
-    return this.journeys;
   }
 }

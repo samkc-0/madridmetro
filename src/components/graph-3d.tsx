@@ -13,8 +13,55 @@ import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 
-import type { Graph, Vertex, JourneySegment } from "@/types/graph";
+import type { Graph, Vertex } from "@/types/graph";
 import { CapsuleTraveler } from "@/components/capsule-traveler";
+import { MadridClockTracker, type MadridClock } from "@/metro/madridClock";
+import { computeActiveTrains, type ActiveTrain, type Schedule } from "@/metro/liveTrains";
+import scheduleData from "@/metro/data/schedule.json";
+
+const schedule = scheduleData as Schedule;
+const ACTIVE_TRAINS_POLL_MS = 5000;
+
+// Trains are a pure function of the current real time (see liveTrains.ts),
+// so the only state that needs a React re-render is *which* trains exist --
+// polled every few seconds, since departures are minutes apart. Each
+// mounted CapsuleTraveler reads the shared clockRef every frame for smooth,
+// per-frame-accurate motion in between polls.
+const LiveTrains: React.FC<{ vertexMap: Map<string, Vertex> }> = ({
+  vertexMap,
+}) => {
+  const trackerRef = useRef(new MadridClockTracker());
+  const clockRef = useRef<MadridClock>({ secondsOfDay: 0, weekday: 0 });
+  const [activeTrains, setActiveTrains] = useState<ActiveTrain[]>(() => {
+    trackerRef.current.readInto(clockRef.current);
+    return computeActiveTrains(schedule, clockRef.current);
+  });
+
+  useFrame(() => {
+    trackerRef.current.readInto(clockRef.current);
+  });
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActiveTrains(computeActiveTrains(schedule, clockRef.current));
+    }, ACTIVE_TRAINS_POLL_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <>
+      {activeTrains.map((train) => (
+        <CapsuleTraveler
+          key={train.id}
+          stops={train.stops}
+          departureSec={train.departureSec}
+          clockRef={clockRef}
+          vertexMap={vertexMap}
+        />
+      ))}
+    </>
+  );
+};
 
 // Renders every edge as a single batched draw call (fat lines) instead
 // of one cylinder mesh per edge.
@@ -145,10 +192,7 @@ const Stations: React.FC<{ vertices: Vertex[] }> = memo(({ vertices }) => {
   );
 });
 
-export const Graph3D: React.FC<{
-  graph: Graph;
-  journeySchedules?: JourneySegment[][];
-}> = ({ graph, journeySchedules }) => {
+export const Graph3D: React.FC<{ graph: Graph }> = ({ graph }) => {
   const vertexMap = useMemo(
     () => new Map<string, Vertex>(graph.vertices.map((v) => [v.id, v])),
     [graph.vertices],
@@ -157,13 +201,7 @@ export const Graph3D: React.FC<{
     <group name="graph-3d" rotation-x={0}>
       <Stations vertices={graph.vertices} />
       <EdgeLines graph={graph} vertexMap={vertexMap} />
-      {journeySchedules?.map((schedule, i) => (
-        <CapsuleTraveler
-          key={`journey-${i}`}
-          schedule={schedule}
-          vertexMap={vertexMap}
-        />
-      ))}
+      <LiveTrains vertexMap={vertexMap} />
     </group>
   );
 };
