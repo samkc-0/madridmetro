@@ -27,8 +27,8 @@ const App: React.FC = () => {
       camera={{
         fov: 60,
         near: 0.1,
-        far: 1000,
-        position: [0, 10, 15],
+        far: 2000,
+        position: [0, 20, 30],
       }}
     >
       <Scene />

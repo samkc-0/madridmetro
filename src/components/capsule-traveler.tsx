@@ -39,7 +39,10 @@ export const CapsuleTraveler: React.FC<{
     if (!sourceVertex || !targetVertex || !capsuleRef.current) return;
 
     const span = to.offset - from.offset;
-    const progress = span > 0 ? (elapsed - from.offset) / span : 0;
+    const linearProgress = span > 0 ? (elapsed - from.offset) / span : 0;
+    // Ease in/out of each stop instead of a constant speed with an abrupt
+    // velocity change at every station.
+    const progress = THREE.MathUtils.smoothstep(linearProgress, 0, 1);
     currentPos.copy(sourceVertex.position).lerp(targetVertex.position, progress);
     direction
       .subVectors(targetVertex.position, sourceVertex.position)

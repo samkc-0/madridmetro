@@ -8,7 +8,7 @@ import { coordinates } from "@/metro/data/stations.json";
 import { getMapAspectRatio, normalizeCoordinates } from "@/metro/utilities";
 
 const aspectRatio = getMapAspectRatio(coordinates);
-const scaleFactor = 32;
+const scaleFactor = 64;
 const positions = normalizeCoordinates(
   coordinates,
   scaleFactor * aspectRatio,
