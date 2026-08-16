@@ -8,13 +8,13 @@ import {
   useRef,
   useState,
 } from "react";
-import { useFrame, type ThreeEvent } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 
 import type { Graph, Vertex } from "@/types/graph";
 import { CapsuleTraveler } from "@/components/capsule-traveler";
 import { MadridClockTracker, type MadridClock } from "@/metro/madridClock";
 import { computeActiveTrains, type ActiveTrain, type Schedule } from "@/metro/liveTrains";
-import { lineColors, stationLines } from "@/metro/lineInfo";
+import { darken, lineColors, stationLines } from "@/metro/lineInfo";
 import scheduleData from "@/metro/data/schedule.json";
 
 const schedule = scheduleData as Schedule;
@@ -118,8 +118,8 @@ const EdgeCylinders: React.FC<{
 const StationLabel: React.FC<{
   vertex: Vertex;
   color: string;
-  outlined: boolean;
-}> = memo(({ vertex, color, outlined }) => {
+  strokeColor: string;
+}> = memo(({ vertex, color, strokeColor }) => {
   const [troikaText] = useState(() => new Text());
 
   useLayoutEffect(() => {
@@ -129,21 +129,20 @@ const StationLabel: React.FC<{
     troikaText.color = color;
     troikaText.anchorX = "center";
     troikaText.anchorY = "bottom";
-    // Thin crisp outline only while actively hovered/tapped -- not a
-    // permanent shadow.
-    troikaText.outlineColor = "black";
-    troikaText.outlineOpacity = outlined ? 1 : 0;
-    troikaText.outlineBlur = 0;
-    troikaText.outlineWidth = outlined ? "3%" : 0;
+    // A barely-there *inner* stroke (drawn inset within the glyph, unlike
+    // outlineWidth which expands outward and softens the crisp edges),
+    // same hue as the fill (or silver for white interchange labels) just
+    // a touch darker.
+    troikaText.strokeColor = strokeColor;
+    troikaText.strokeOpacity = 0.6;
+    troikaText.strokeWidth = "10%";
     troikaText.sync();
     return () => troikaText.dispose();
-  }, [troikaText, vertex.id, color, outlined]);
+  }, [troikaText, vertex.id, color, strokeColor]);
 
   return <primitive object={troikaText} />;
 });
 
-// The sphere and its label are one component so hover/tap state stays
-// local to each station instead of needing to be coordinated externally.
 // Label position lives on the outer (unrotated) group so it stays at the
 // station's world coordinates; only the inner group's rotation is updated,
 // in one shared per-frame pass (owned by Stations below), to billboard the
@@ -153,33 +152,17 @@ const Station: React.FC<{
   billboardRefs: React.MutableRefObject<Map<string, THREE.Group>>;
   activeLines: Set<string>;
 }> = memo(({ vertex, billboardRefs, activeLines }) => {
-  const [hovered, setHovered] = useState(false);
-  const [tapped, setTapped] = useState(false);
   const linesHere = stationLines[vertex.id] ?? [];
   const isInterchange = linesHere.length > 1;
   const sphereColor = isInterchange ? "white" : (lineColors[linesHere[0]] ?? "white");
-  const labelColor = isInterchange ? "black" : sphereColor;
+  const labelColor = isInterchange ? "white" : sphereColor;
+  const labelStrokeColor = isInterchange ? "silver" : darken(sphereColor, 0.2);
   const sphereRadius = isInterchange ? 0.15 : 0.11;
-  const onActiveLine = linesHere.some((line) => activeLines.has(line));
-  const showLabel = hovered || tapped || onActiveLine;
+  const showLabel = linesHere.some((line) => activeLines.has(line));
 
   return (
     <group>
-      <mesh
-        position={vertex.position}
-        onPointerOver={(event: ThreeEvent<PointerEvent>) => {
-          event.stopPropagation();
-          setHovered(true);
-        }}
-        onPointerOut={(event: ThreeEvent<PointerEvent>) => {
-          event.stopPropagation();
-          setHovered(false);
-        }}
-        onClick={(event: ThreeEvent<MouseEvent>) => {
-          event.stopPropagation();
-          setTapped((t) => !t);
-        }}
-      >
+      <mesh position={vertex.position}>
         <sphereGeometry args={[sphereRadius, 16, 16]} />
         <meshBasicMaterial color={sphereColor} />
       </mesh>
@@ -200,7 +183,7 @@ const Station: React.FC<{
             <StationLabel
               vertex={vertex}
               color={labelColor}
-              outlined={hovered || tapped}
+              strokeColor={labelStrokeColor}
             />
           )}
         </group>
